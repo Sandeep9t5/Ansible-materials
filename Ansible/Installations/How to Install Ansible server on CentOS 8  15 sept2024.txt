@@ -1,0 +1,222 @@
+How to Install Ansible on CentOS 8
+======================================
+
+https://www.youtube.com/watch?v=nERoy2G9LZI
+
+Method #1.Install Ansible on CentOS 8 with yum package
+----------------------------------------------------------
+
+Step1: Firstly we need to install EPEL repository on CentOS 8:
+
+yum install epel-release -y
+
+cd /etc/yum.repos.d/
+sed -i  's/mirrorlist/#mirrorlist/g'  /etc/yum.repos.d/CentOS-*
+sed -i  's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g'  /etc/yum.repos.d/CentOS-*
+yum install epel-release -y
+
+
+
+
+Step2: If you wants to check repositories on CentOS then run the below command:
+
+yum repolist | grep epel
+
+Output:
+
+epel               Extra Packages for Enterprise Linux 8 - x86_64
+epel-modular       Extra Packages for Enterprise Linux Modular 8 - x86_64
+
+
+
+
+
+Step3: Install ansible on CentOS 8 using below command:
+
+yum install ansible -y
+
+
+
+
+Step4: To check ansible version:
+
+ansible --version
+
+
+Output:
+
+ansible [core 2.11.8]
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = ['/home/centos/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/local/lib/python3.6/site-packages/ansible
+  ansible collection location = /home/centos/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/local/bin/ansible
+  python version = 3.6.8 (default, Sep 10 2021, 09:13:53) [GCC 8.5.0 20210514 (Red Hat 8.5.0-3)]
+  jinja version = 2.10.1
+  libyaml = True
+
+
+
+Uninstall ansible on CentOS 8:
+
+yum remove ansible -y
+
+
+
+
+
+Method #2.Install Ansible on CentOS 8 using pip
+------------------------------------------------
+
+
+Now we are going to run below commands on Ansible server 
+
+Step1: If you’re using Python3, install the python3-pip package.
+
+sudo dnf -y install python3-pip
+sudo pip3 install --upgrade pip
+
+
+
+For Python2 users you have to install python2-pip
+
+sudo dnf -y install python2-pip
+sudo pip2 install --upgrade pip
+
+
+
+Step2: Install ansible on CentOS using pip:
+
+pip3 install ansible
+
+
+Step3: To check ansible version:
+
+/usr/local/bin/ansible --version
+
+
+Output:
+
+ansible [core 2.11.8]
+  config file = None
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/local/lib/python3.6/site-packages/ansible
+  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/local/bin/ansible
+  python version = 3.6.8 (default, Apr 16 2020, 01:36:27) [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]
+  jinja version = 2.10.1
+  libyaml = True
+
+
+
+ #3.Create Inventory file in Ansible
+---------------------------------------------
+
+
+Step1: To test Ansible, firstly ensure that ssh is up and running on your Ansible server:
+
+sudo systemctl status sshd
+
+
+Step2: Create ansible inventory file using below command in Ansible server:
+
+sudo mkdir /etc/ansible  
+ cd /etc/ansible
+sudo touch hosts
+sudo vi /etc/ansible/hosts
+Copy the IP address of your remote servers and paste in host file
+
+You can create group and paste ip address like below:
+
+[devopshint]
+65.2.140.xx
+65.2.144.xx
+
+
+
+ #4.Configuration of Ansible server
+------------------------------------------
+
+
+Step1: Now this host file is only working after updating ansible.cfg file so we need to update config file in Ansible server using below command:
+
+sudo vi /etc/ansible/ansible.cfg
+Then uncommited two file
+
+i) inventory = /etc /ansible / hosts
+ii) sudo-user = root
+
+Step2: Now, create one user in all these instance(Ansible server and nodes)
+
+sudo adduser ansible
+sudo passwd ansible
+now navigate the Ansible user 
+
+su - ansible 
+try to create a some file and install some package
+
+you got some error like this 
+
+This ansible user doesn’t have sudo privileges right now. 
+
+If you want to give sudo privileges to ansible user then run below command
+
+ #5.Add User to the sudo Group
+-------------------------------------------
+
+Step1: Then give some privileged in all nodes(ansible server and node) using below command:
+
+  sudo visudo 
+go to inside this file and add 
+
+ansible ALL=(ALL) NOPASSWD:ALL
+
+
+#6.Update ssh_config file
+-------------------------------------
+
+
+For SSH connection to node from Ansible server make changes in sshd_config file
+
+Step1: Now we have to some changes in ssh-config file in Ansible server and nodes:
+
+vi /etc/ssh/sshd_config
+Then you need to uncomment these two lines
+
+PubkeyAuthentication yes
+PasswordAuthentication yes
+Now we need to restart sshd service in Ansible server and nodes:
+
+sudo systemctl restart sshd
+sudo systemctl status sshd
+
+
+ #7.Establish connection between server and node
+-------------------------------------------------------
+
+
+ Go to ansible server run the below command
+
+Step1: login to ansible in ansible server using below command:
+
+su - ansible
+Step2: Run the below command to connect node:
+
+ssh ip_address ( node ip)
+
+
+#8.Setup SSH keys and share it among managed nodes
+-----------------------------------------------------------
+
+
+To communicate with client we have to genrate SSH key on Ansible server node and exchange with Slave/Client Systems.
+
+Step1: we need to generate ssh keygen in Ansible server
+
+ssh-keygen 
+Step2: you need to inside .ssh:
+
+cd .ssh
+Step3:Now run the below command using private ip of your node:
+
+ssh-copy-id ansible@{private address } 

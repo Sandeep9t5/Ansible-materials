@@ -1,0 +1,313 @@
+Ansible Server centOS7
+===========================================================================================================================
+user's switching
+
+Root to ansible  -->  su - ansible
+ansible to Root  -->  su -
+
+Set hostname
+-------------
+hostnamectl    set-hostname   AnsibleServer.com
+bash
+
+Configure local yum repo
+---------------------------
+
+mkdir /redhatdvd
+ls /
+lsblk
+
+mount /dev/sr0  /redhatdvd
+
+
+vi /etc/fstab                       /dev/sr0             /redhatdvd       iso9660     defaults   0   0  
+systemctl daemon reload
+
+ls /redhatdvd
+
+cd /etc/yum.repos.d/
+ls
+rm -rf *
+
+vi localrepo.repo                  or     vi /etc/yum.repos.d/localrepo.repo
+
+  
+
+[BaseOs]
+name=BaseOS-centos8
+metadata_expire=-1
+gpgcheck=0
+enabled=1
+baseurl=file:///redhatdvd/BaseOS
+
+
+[AppStream]
+name=AppStream-centos8
+metadata_expire=-1
+gpgcheck=0
+enabled=1
+baseurl=file:///redhatdvd/AppStream   
+                                                          (0 - NO VERIFY    1 - VERIFY)
+
+configure epel repo
+--------------------
+
+# yum install wget*
+# wget dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+# yum install  epel-release-latest-9.noarch.rpm 
+
+# cd /etc/yum.repos.d
+# ls
+
+
+# yum update -y
+# yum install git  python3  python3-level  python3-pip  openssl  ansible  -y
+yum install git  python3   python3-pip  openssl    -y
+
+pip3 install ansible --user
+python2 --version
+pip2 --version
+ansible --version
+
+
+
+
+
+# vim /etc/ansible/hosts
+[demo]
+192.168.29.104
+192.168.29.11
+
+Now this host file is only working after updating ansible.cfg file
+---------------------------------------------------------------------
+# vim /etc/ansible/ansible.cfg
+
+Uncommented
+#inventory = /etc/ansible/hosts
+#sudo-user = root
+
+If you want to run any command then remove # from it, then it will work
+
+Now create one user, in all the three instances
+# adduser ansible
+
+Now set password for this user
+# passwd ansible
+
+
+
+This ansible user don’t have sudo priviledges right now. If you want to give sudo ppriviledge to
+ansible user
+# vi /etc/sudoersNow go inside this file
+Root ALL= (ALL) ALL
+ansible ALL= (ALL) NOPASSWD: ALL
+:wq!
+
+
+Now switch as ansible user
+# su – ansible
+
+Now do this thing in other nodes also.
+Now go to ansible server and try to install httpd package as an ansible user.
+# sudo yum install httpd -y
+
+Now establish connection between server and node, go to ansible server
+$ ssh 172.31.41.240
+o/p- permission denied
+
+now we have to do some changes in sshd-config file, go to ansible server
+----------------------------------------------------------------------------
+
+# vim /etc/ssh/sshd_config
+uncomment
+
+#PermitRootLogin yes
+
+# To disable tunneled clear text passwords, change to no here!
+
+PasswordAuthentication yes
+#PasswordAuthentication no
+
+Do some changes and saved the file.
+Do this work in node1 and node2 also.
+
+Now verify in ansible server
+# su ansible
+# ssh 192.168.29.18
+
+Now it asks for passwd, enter the password after that you will be inside node1.
+
+
+Now go to ansible server and create keys.
+--------------------------------------------
+
+Run this command as ansible user.
+
+# ssh-keygen
+
+# ls -a
+o/p- .ssh
+
+# cd .ssh/
+
+ls
+o/p- id_rsa id_rsa_pub
+
+now I need to copy public key of both the worker-nodes in ansible server.
+--------------------------------------------------------------------------------
+# ssh-copy-id ansible@192.168.29.104
+# ssh-copy-id ansible@192.168.29.11
+
+
+Now verify, go to ansible server
+# cd ..
+Now you will enter into node-1.
+# ssh 192.168.29.18
+Now you will enter into node-2.
+# ssh 192.168.29.128
+
+
+
+
+
+Worker-1
+---------
+
+Set hostname
+-------------
+hostnamectl    set-hostname   node-1.com
+
+
+Configure local yum repo
+---------------------------
+
+mkdir /redhatdvd
+ls /
+lsblk
+
+mount /dev/sr0  /redhatdvd
+
+
+vi /etc/fstab                       /dev/sr0             /redhatdvd       iso9660     defaults   0   0  
+systemctl daemon reload
+
+ls /redhatdvd
+
+vi /etc/yum.repos.d/localrepo.repo
+[localrepo]
+name=This is my local repo 
+baseurl=file:///redhatdvd
+enabled=1
+gpgcheck=0 
+
+Now create one user, in all the three instances
+# adduser ansible
+
+Now set password for this user
+# passwd ansible
+
+This ansible user don’t have sudo priviledges right now. If you want to give sudo ppriviledge to
+ansible user
+# vim /etc/sudoersNow go inside this file
+Root ALL= (ALL) ALL
+ansible ALL= (ALL) NOPASSWD: ALL
+:wq!
+
+Now switch as ansible user
+# su ansible
+
+
+
+Now do this thing in other nodes also.
+Now go to ansible server and try to install httpd package as an ansible user.
+# sudo yum install httpd -y
+
+
+
+now we have to do some changes in sshd-config file, go to ansible server
+-----------------------------------------------------------------------------
+# vi /etc/ssh/sshd_config
+
+uncomment
+#PermitRootLogin yes
+
+# To disable tunneled clear text passwords, change to no here!
+PasswordAuthentication yes
+#PasswordAuthentication no
+
+Do some changes and saved the file.
+Do this work in node1 and node2 also.
+
+systemctl restart sshd
+
+
+
+
+Worker-2
+---------
+
+Set hostname
+-------------
+hostnamectl    set-hostname   node-2.com
+
+
+Configure local yum repo
+---------------------------
+
+mkdir /redhatdvd
+ls /
+lsblk
+
+mount /dev/sr0  /redhatdvd
+
+
+vi /etc/fstab                       /dev/sr0             /redhatdvd       iso9660     defaults   0   0  
+systemctl daemon reload
+
+ls /redhatdvd
+
+vi /etc/yum.repos.d/localrepo.repo
+[localrepo]
+name=This is my local repo 
+baseurl=file:///redhatdvd
+enabled=1
+gpgcheck=0 
+
+
+Now create one user, in all the three instances
+# adduser ansible
+
+Now set password for this user
+# passwd ansible
+
+
+
+This ansible user don’t have sudo priviledges right now. If you want to give sudo ppriviledge to
+ansible user
+# vim /etc/sudoersNow go inside this file
+Root ALL= (ALL) ALL
+ansible ALL= (ALL) NOPASSWD: ALL
+:wq!
+
+Now switch as ansible user
+# su ansible
+
+Now do this thing in other nodes also.
+Now go to ansible server and try to install httpd package as an ansible user.
+# sudo yum install httpd -y
+
+now we have to do some changes in sshd-config file, go to ansible server
+-----------------------------------------------------------------------------
+# vi /etc/ssh/sshd_config
+
+uncomment
+#PermitRootLogin yes
+
+# To disable tunneled clear text passwords, change to no here!
+PasswordAuthentication yes
+#PasswordAuthentication no
+
+Do some changes and saved the file.
+Do this work in node1 and node2 also.
+
+systemctl restart sshd
